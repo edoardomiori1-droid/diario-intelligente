@@ -14,39 +14,40 @@ THEMES = {
 def apply_synapse_ui(theme_name):
     t = THEMES.get(theme_name, THEMES["Cyber Matrix"])
     
-    style = f"""
+    # Usiamo un template statico e sostituiamo i valori a mano
+    # Questo evita il TypeError su Python 3.14
+    style_template = """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap');
+    .stApp { background-color: __BG__; color: __TXT__; }
     
-    .stApp {{ background-color: {t['bg']}; color: {t['txt']}; }}
-    
-    .os-title {{
-        font-family: 'JetBrains Mono', monospace;
+    .os-title {
+        font-family: 'monospace';
         font-size: 3rem; font-weight: bold; text-align: center;
-        background: linear-gradient(to right, {t['main']}, {t['sec']});
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        margin-bottom: 30px;
-    }}
+        color: __MAIN__; margin-bottom: 30px;
+    }
 
-    .glass-card {{
-        background: {t['card']};
-        border: 1px solid {t['main']}55;
+    .glass-card {
+        background: __CARD__;
+        border: 1px solid __MAIN__;
         border-radius: 20px; padding: 30px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }}
+    }
 
-    .stButton>button {{
-        background: linear-gradient(to right, {t['main']}, {t['sec']}) !important;
-        color: {t['bg']} !important; border: none !important;
+    .stButton>button {
+        background: linear-gradient(to right, __MAIN__, __SEC__) !important;
+        color: __BG__ !important; border: none !important;
         font-weight: bold !important; border-radius: 12px !important;
-        height: 55px; width: 100%; transition: 0.3s;
-    }}
-
-    .stButton>button:hover {{ transform: scale(1.02); box-shadow: 0 0 15px {t['main']}; }}
+        height: 55px; width: 100% !important;
+    }
     
-    /* Messaggi Chat */
-    .user-msg {{ border-right: 4px solid {t['main']}; padding: 10px; margin: 10px 0 10px 40px; text-align: right; background: {t['card']}; }}
-    .ai-msg {{ border-left: 4px solid {t['sec']}; padding: 10px; margin: 10px 40px 10px 0; background: {t['card']}; }}
+    .user-msg { border-right: 4px solid __MAIN__; padding: 10px; margin: 10px; text-align: right; background: __CARD__; }
+    .ai-msg { border-left: 4px solid __SEC__; padding: 10px; margin: 10px; background: __CARD__; }
     </style>
     """
-    st.markdown(style, unsafe_allow_input=True)
+    
+    style = style_template.replace("__BG__", t['bg'])\
+                          .replace("__TXT__", t['txt'])\
+                          .replace("__MAIN__", t['main'])\
+                          .replace("__SEC__", t['sec'])\
+                          .replace("__CARD__", t['card'])
+                          
+    st.markdown(style, unsafe_allow_html=True)
