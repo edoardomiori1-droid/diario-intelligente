@@ -5,57 +5,28 @@ import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
 import time
-import json
 
 # ==============================================================================
 # 1. DESIGN SYSTEM - 10 PACCHETTI CROMATICI PROFESSIONALI
 # ==============================================================================
 THEMES = {
-    "Cyber Matrix": {
-        "main": "#00FF41", "sec": "#008F11", "bg": "#0D0D0D", 
-        "card": "#1A1A1A", "txt": "#E0E0E0", "sidebar": "#000000"
-    },
-    "Synthetic Sunset": {
-        "main": "#FF8C00", "sec": "#FF0080", "bg": "#120D16", 
-        "card": "#1D1625", "txt": "#F5F5F5", "sidebar": "#120D16"
-    },
-    "Deep Space": {
-        "main": "#00FFFF", "sec": "#007FFF", "bg": "#050A10", 
-        "card": "#0F1720", "txt": "#E0F7FA", "sidebar": "#050A10"
-    },
-    "Crimson Fury": {
-        "main": "#FF0000", "sec": "#8B0000", "bg": "#0F0F0F", 
-        "card": "#1C1C1C", "txt": "#FFFFFF", "sidebar": "#000000"
-    },
-    "Arctic Frost": {
-        "main": "#74EBD5", "sec": "#9FACE6", "bg": "#F0F4F8", 
-        "card": "#FFFFFF", "txt": "#2C3E50", "sidebar": "#E0E7FF"
-    },
-    "Royal Amethyst": {
-        "main": "#FF00FF", "sec": "#7000FF", "bg": "#0A0510", 
-        "card": "#160D25", "txt": "#FDF0FF", "sidebar": "#0A0510"
-    },
-    "Forest Guard": {
-        "main": "#C2B280", "sec": "#4F7942", "bg": "#0D110D", 
-        "card": "#161D16", "txt": "#ECECEC", "sidebar": "#0D110D"
-    },
-    "Midnight Gold": {
-        "main": "#D4AF37", "sec": "#996515", "bg": "#0A0A0A", 
-        "card": "#141414", "txt": "#F4F4F4", "sidebar": "#000000"
-    },
-    "Tokyo Drift": {
-        "main": "#FF69B4", "sec": "#00FFFF", "bg": "#0F0510", 
-        "card": "#1A0D1D", "txt": "#FFFFFF", "sidebar": "#0F0510"
-    },
-    "Carbon Fiber": {
-        "main": "#FFFFFF", "sec": "#555555", "bg": "#0A0A0A", 
-        "card": "#1A1A1A", "txt": "#F0F0F0", "sidebar": "#000000"
-    }
+    "Cyber Matrix": {"main": "#00FF41", "sec": "#008F11", "bg": "#0D0D0D", "card": "#1A1A1A", "txt": "#E0E0E0"},
+    "Synthetic Sunset": {"main": "#FF8C00", "sec": "#FF0080", "bg": "#120D16", "card": "#1D1625", "txt": "#F5F5F5"},
+    "Deep Space": {"main": "#00FFFF", "sec": "#007FFF", "bg": "#050A10", "card": "#0F1720", "txt": "#E0F7FA"},
+    "Crimson Fury": {"main": "#FF0000", "sec": "#8B0000", "bg": "#0F0F0F", "card": "#1C1C1C", "txt": "#FFFFFF"},
+    "Arctic Frost": {"main": "#74EBD5", "sec": "#9FACE6", "bg": "#F0F4F8", "card": "#FFFFFF", "txt": "#2C3E50"},
+    "Royal Amethyst": {"main": "#FF00FF", "sec": "#7000FF", "bg": "#0A0510", "card": "#160D25", "txt": "#FDF0FF"},
+    "Forest Guard": {"main": "#C2B280", "sec": "#4F7942", "bg": "#0D110D", "card": "#161D16", "txt": "#ECECEC"},
+    "Midnight Gold": {"main": "#D4AF37", "sec": "#996515", "bg": "#0A0A0A", "card": "#141414", "txt": "#F4F4F4"},
+    "Tokyo Drift": {"main": "#FF69B4", "sec": "#00FFFF", "bg": "#0F0510", "card": "#1A0D1D", "txt": "#FFFFFF"},
+    "Carbon Fiber": {"main": "#FFFFFF", "sec": "#555555", "bg": "#0A0A0A", "card": "#1A1A1A", "txt": "#F0F0F0"}
 }
 
 # ==============================================================================
-# 2. CORE INITIALIZATION
+# 2. CORE INITIALIZATION (Deve essere la primissima cosa)
 # ==============================================================================
+st.set_page_config(page_title="Synapse", layout="wide")
+
 if 'initialized' not in st.session_state:
     st.session_state.update({
         'initialized': True,
@@ -64,71 +35,67 @@ if 'initialized' not in st.session_state:
         'current_theme': "Cyber Matrix",
         'onboarding_step': 1,
         'temp_data': {},
-        'people_log': [],
-        'system_logs': [f"OS Booted at {datetime.now().strftime('%H:%M:%S')}"]
+        'people_log': []
     })
 
 # ==============================================================================
-# 3. CSS UI ENGINE (FIXED TYPEERROR VERSION)
+# 3. CSS UI ENGINE (RE-ENGINEERED)
 # ==============================================================================
 def inject_ui(theme_key):
-    """Gestione sicura del CSS per evitare TypeError con parentesi graffe."""
-    t = THEMES.get(theme_key, THEMES["Cyber Matrix"])
+    # Fallback se la chiave è None o non valida
+    if not theme_key or theme_key not in THEMES:
+        theme_key = "Cyber Matrix"
+        
+    t = THEMES[theme_key]
     
-    # Usiamo stringhe separate per evitare bug di parsing
-    main_color = t['main']
-    sec_color = t['sec']
-    bg_color = t['bg']
-    card_color = t['card']
-    txt_color = t['txt']
-
-    css_code = f"""
+    # Costruiamo la stringa senza usare f-strings dirette con troppe parentesi
+    # Questo previene il crash di parsing di Streamlit
+    css = f"""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
-    
-    .stApp {{ background-color: {bg_color}; color: {txt_color}; font-family: 'Inter', sans-serif; }}
+    .stApp {{ background-color: {t['bg']}; color: {t['txt']}; }}
     
     .os-header {{
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 3.5rem; font-weight: 800;
-        background: linear-gradient(90deg, {main_color}, {sec_color});
+        font-family: 'Courier New', monospace;
+        font-size: 50px; font-weight: bold;
+        background: linear-gradient(to right, {t['main']}, {t['sec']});
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         text-align: center; margin-bottom: 20px;
     }}
 
     .glass-card {{
-        background: {card_color};
-        border: 1px solid {main_color}33;
-        border-radius: 20px; padding: 30px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        background: {t['card']};
+        border: 1px solid {t['main']};
+        border-radius: 15px; padding: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }}
 
     .chat-user {{
-        background: {card_color}; border-right: 4px solid {main_color};
-        padding: 15px; border-radius: 12px 0 12px 12px; margin: 10px 0 10px 20%;
+        background: {t['card']}; border-right: 4px solid {t['main']};
+        padding: 10px; border-radius: 10px; margin: 10px 0px 10px 100px;
+        text-align: right;
     }}
 
     .chat-ai {{
-        background: {card_color}; border-left: 4px solid {sec_color};
-        padding: 15px; border-radius: 0 12px 12px 12px; margin: 10px 20% 10px 0;
+        background: {t['card']}; border-left: 4px solid {t['sec']};
+        padding: 10px; border-radius: 10px; margin: 10px 100px 10px 0px;
     }}
 
     .stButton button {{
-        background: linear-gradient(90deg, {main_color}, {sec_color}) !important;
-        color: {bg_color} !important; font-weight: bold !important;
-        border-radius: 12px !important; border: none !important;
-        width: 100%; padding: 12px !important;
+        background: linear-gradient(to right, {t['main']}, {t['sec']}) !important;
+        color: {t['bg']} !important; font-weight: bold !important;
+        border-radius: 8px !important; border: none !important;
+        height: 50px; width: 100%;
     }}
     </style>
     """
-    st.markdown(css_code, unsafe_allow_input=True)
+    st.markdown(css, unsafe_allow_input=True)
 
 # ==============================================================================
 # 4. NEURAL BRAIN
 # ==============================================================================
 def call_synapse(prompt):
     if "GEMINI_API_KEY" not in st.secrets:
-        return "CONFIG_ERROR: Manca la chiave API."
+        return "Errore: Inserisci la chiave API nei Secrets di Streamlit."
     try:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
         model = genai.GenerativeModel('gemini-1.5-flash')
@@ -150,40 +117,36 @@ def run_onboarding():
     with col:
         st.markdown('<div class="glass-card">', unsafe_allow_input=True)
         step = st.session_state.onboarding_step
-        st.write(f"📂 **MODULO_INIT: {step}/3**")
-        st.progress(step/3)
+        st.write(f"MODULO INIT: {step}/3")
 
         if step == 1:
-            st.subheader("🧬 Anagrafica")
-            nome = st.text_input("Nome Cognome")
-            nick = st.text_input("Nickname")
-            data = st.date_input("Nascita", value=datetime(2000,1,1))
-            gen = st.selectbox("Genere", ["M", "F", "Non-Binario", "Altro"])
-            if st.button("AVANTI"):
+            nome = st.text_input("Nome Cognome", key="n_in")
+            nick = st.text_input("Nickname", key="ni_in")
+            data = st.date_input("Nascita", value=datetime(2000,1,1), key="d_in")
+            gen = st.selectbox("Genere", ["M", "F", "Non-Binario", "Altro"], key="g_in")
+            if st.button("SALVA E CONTINUA"):
                 if nome and nick:
                     st.session_state.temp_data.update({"nome":nome, "nick":nick, "nascita":str(data), "genere":gen})
                     st.session_state.onboarding_step = 2
                     st.rerun()
 
         elif step == 2:
-            st.subheader("📡 Calibrazione")
-            s = st.slider("Socialità", 1, 10, 5)
-            e = st.slider("Energia", 1, 10, 5)
-            r = st.slider("Rischio", 1, 10, 5)
+            s = st.slider("Socialità (1-10)", 1, 10, 5)
+            e = st.slider("Energia (1-10)", 1, 10, 5)
+            r = st.slider("Rischio (1-10)", 1, 10, 5)
             v = st.radio("Vibe AI", ["Diretto", "Gentile", "Ironico", "Scientifico"])
-            if st.button("AVANTI"):
+            if st.button("SALVA E CONTINUA"):
                 st.session_state.temp_data.update({"social":s, "energy":e, "risk":r, "vibe":v})
                 st.session_state.onboarding_step = 3
                 st.rerun()
 
         elif step == 3:
-            st.subheader("🎨 Estetica")
-            t = st.selectbox("Tema", list(THEMES.keys()), index=list(THEMES.keys()).index(st.session_state.current_theme))
+            t = st.selectbox("Pacchetto Colori", list(THEMES.keys()))
             if t != st.session_state.current_theme:
                 st.session_state.current_theme = t
                 st.rerun()
-            obj = st.text_area("Obiettivo")
-            if st.button("FINISH"):
+            obj = st.text_area("Cosa vuoi migliorare?")
+            if st.button("INIZIALIZZA"):
                 st.session_state.temp_data["obiettivi"] = obj
                 st.session_state.user_profile = st.session_state.temp_data
                 st.rerun()
@@ -194,14 +157,14 @@ def run_main():
     t = THEMES[st.session_state.current_theme]
     
     menu = option_menu(
-        None, ["Analisi", "Diario", "Network", "OS"],
+        None, ["Dashboard", "Diario", "Social", "Sistema"],
         icons=["activity", "cpu", "people", "gear"],
         orientation="horizontal",
         styles={"container": {"background": t['card']}, "nav-link-selected": {"background": t['main'], "color": t['bg']}}
     )
 
-    if menu == "Analisi":
-        st.markdown(f"### <span style='color:{t['main']}'>// NEURAL_DASHBOARD</span>", unsafe_allow_input=True)
+    if menu == "Dashboard":
+        st.markdown(f"### <span style='color:{t['main']}'>// DASHBOARD</span>", unsafe_allow_input=True)
         up = st.session_state.user_profile
         fig = go.Figure(data=go.Scatterpolar(
             r=[up['social'], up['energy'], up['risk']],
@@ -217,27 +180,25 @@ def run_main():
             for m in st.session_state.chat_log:
                 cls = "chat-user" if m["role"] == "user" else "chat-ai"
                 st.markdown(f'<div class="{cls}">{m["content"]}</div>', unsafe_allow_input=True)
-        if p := st.chat_input("Scrivi..."):
+        if p := st.chat_input("Scrivi log..."):
             st.session_state.chat_log.append({"role": "user", "content": p})
             r = call_synapse(p)
             st.session_state.chat_log.append({"role": "assistant", "content": r})
             st.rerun()
 
-    elif menu == "OS":
-        st.subheader("Impostazioni")
-        new_t = st.selectbox("Tema", list(THEMES.keys()), index=list(THEMES.keys()).index(st.session_state.current_theme))
+    elif menu == "Sistema":
+        new_t = st.selectbox("Cambia Tema", list(THEMES.keys()), index=list(THEMES.keys()).index(st.session_state.current_theme))
         if st.button("Applica"):
             st.session_state.current_theme = new_t
             st.rerun()
         if st.button("RESET"):
             st.session_state.user_profile = None
+            st.session_state.onboarding_step = 1
             st.rerun()
 
 # ==============================================================================
-# 6. BOOT
+# 6. EXECUTION
 # ==============================================================================
-st.set_page_config(page_title="Synapse", layout="wide")
-
 if st.session_state.user_profile is None:
     run_onboarding()
 else:
