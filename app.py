@@ -1,260 +1,355 @@
+"""
+SYNAPSE NEURAL OS - MAIN CORE v3.5
+File: app.py
+Status: EXECUTIVE / STABLE
+Description: Motore principale dell'OS. Gestisce Onboarding, Dashboard e Neural Chat.
+"""
+
 import streamlit as st
 from streamlit_option_menu import option_menu
 import google.generativeai as genai
-import pandas as pd
 import plotly.graph_objects as go
-from ui_styles import apply_synapse_ui, THEMES
-from datetime import datetime
+import pandas as pd
 import time
+from datetime import datetime
+
+# Importiamo il design system dal file creato in precedenza
+from ui_styles import apply_synapse_ui, THEMES, draw_section_title
 
 # ==============================================================================
-# 1. CORE INITIALIZATION ENGINE
+# 1. GLOBAL SYSTEM INITIALIZATION
 # ==============================================================================
-# Deve essere la primissima istruzione assoluta
-if 'page_init' not in st.session_state:
-    st.set_page_config(
-        page_title="Synapse Neural OS v2.0",
-        page_icon="🧠",
-        layout="wide",
-        initial_sidebar_state="collapsed"
-    )
-    # Inizializzazione Session State per prevenire TypeError
-    st.session_state.update({
-        'page_init': True,
-        'user_profile': None,      # Conterrà i dati dell'onboarding
-        'chat_log': [],            # Storico conversazione Diario
-        'current_theme': "Synapse Prime (Matrix)",
-        'onboarding_step': 1,      # Step dell'onboarding
-        'temp_reg_data': {}        # Dati temporanei di registrazione
-    })
+
+def initialize_neural_state():
+    """
+    Inizializza lo stato del sistema. 
+    Assicura che tutte le variabili necessarie siano presenti per evitare KeyError.
+    """
+    # Configurazione pagina (deve essere la prima istruzione Streamlit)
+    if 'system_initialized' not in st.session_state:
+        st.set_page_config(
+            page_title="Synapse Neural OS",
+            page_icon="🧠",
+            layout="wide",
+            initial_sidebar_state="collapsed"
+        )
+        
+        # Setup dello stato iniziale
+        st.session_state.update({
+            'system_initialized': True,
+            'boot_timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            'user_profile': None,           # Dati utente salvati post-onboarding
+            'chat_history': [],             # Log della chat neurale
+            'current_theme_id': "SYNAPSE_PRIME",
+            'onboarding_stage': 1,          # Progresso configurazione
+            'draft_data': {},               # Dati temporanei
+            'system_logs': ["System Boot Successful", "Neural Engine Standby"]
+        })
 
 # ==============================================================================
-# 2. AI LOGIC (GEMINI NEURAL ENGINE)
+# 2. NEURAL ENGINE (AI INTEGRATION)
 # ==============================================================================
-def get_ai_response(prompt):
-    """Gestisce la comunicazione con l'API Gemini incorporando il contesto utente."""
+
+def call_neural_engine(user_prompt):
+    """
+    Gestisce la comunicazione con l'API Google Gemini.
+    Integra il contesto del profilo utente per risposte personalizzate di alto livello.
+    """
     api_key = st.secrets.get("GEMINI_API_KEY")
     if not api_key:
-        return "ERROR_AI: GEMINI_API_KEY non trovata nei Secrets di Streamlit."
+        return "CRITICAL_ERROR: API_KEY_MISSING. Verificare i Secrets di Streamlit Cloud."
     
     try:
         genai.configure(api_key=api_key)
+        # Utilizziamo il modello più veloce e reattivo per un'esperienza OS fluida
         model = genai.GenerativeModel('gemini-1.5-flash')
         
-        # Recupero dati profilo per il prompt contestuale
-        up = st.session_state.user_profile
-        nick = up.get('nick', 'Sconosciuto')
-        goals = up.get('goals', 'Ottimizzazione generale della vita')
+        # Estrazione contesto profilo
+        profile = st.session_state.user_profile
+        context = f"""
+        Identità Utente: {profile.get('nick')}
+        Obiettivi Primari: {profile.get('objectives')}
+        Parametri Neurali: Socialità {profile.get('social')}/10, Energia {profile.get('energy')}/10, Rischio {profile.get('risk')}/10.
         
-        # Prompt ingegnerizzato
-        system_context = f"""
-        PROFILO UTENTE SYNAPSE OS:
-        - Nome: {up['nome']} (Alias: {nick})
-        - Età: {up['data_nascita']} | Genere: {up['genere']}
-        - Matrice Neurale: Socialità {up['social']}, Energia {up['energia']}, Rischio {up['rischio']}
-        - Tono Richiesto: {up['vibe_ai']}
-        - Obiettivo Primario: {goals}
-        
-        ISTRUZIONI: Rispondi come SYNAPSE, un'entità digitale executive. Sii conciso, professionale,
-        diretto e utilizza termini tecnici. Evita emoji e linguaggio infantile.
+        ISTRUZIONI OPERATIVE:
+        Sei SYNAPSE OS. Rispondi in modo analitico, executive e preciso. 
+        Usa un linguaggio tecnico ma chiaro. Non usare emoji. 
+        Il tuo compito è ottimizzare le prestazioni dell'utente.
         """
         
-        full_query = f"{system_context}\n\nINPUT_UTENTE: {prompt}"
+        full_query = f"{context}\n\nUSER_INPUT: {user_prompt}"
         response = model.generate_content(full_query)
+        
+        # Registriamo l'evento nei log di sistema
+        st.session_state.system_logs.append(f"AI_RESPONSE_GENERATED at {datetime.now().strftime('%H:%M:%S')}")
+        
         return response.text
+    
     except Exception as e:
-        return f"CRASH_SISTEMA: Connessione neurale fallita. Dettaglio: {str(e)}"
+        error_msg = f"NEURAL_LINK_FAILURE: {str(e)}"
+        st.session_state.system_logs.append(error_msg)
+        return error_msg
 
 # ==============================================================================
-# 3. UIMODULE: ONBOARDING PROTOCOL
+# 3. INTERFACE MODULE: ONBOARDING PROTOCOL
 # ==============================================================================
-def render_onboarding():
-    """Schermata di configurazione iniziale (Professional & Seria)."""
-    # Applichiamo il tema attuale preventivamente per bloccare i colori
-    apply_synapse_ui(st.session_state.current_theme)
+
+def run_onboarding_protocol():
+    """
+    Gestisce la fase di configurazione iniziale con un'estetica di alto prestigio.
+    Diviso in step per una chiarezza assoluta.
+    """
+    apply_synapse_ui(st.session_state.current_theme_id)
     
-    st.markdown('<p class="os-header">SYNAPSE_INIT</p>', unsafe_allow_input=True)
+    # Header centrato
+    st.markdown('<p class="os-header">SYNAPSE_OS</p>', unsafe_allow_html=True)
     
-    col_a, col_main, col_c = st.columns([1, 2, 1])
+    _, central_col, _ = st.columns([1, 2, 1])
     
-    with col_main:
-        st.markdown('<div class="glass-card">', unsafe_allow_input=True)
-        step = st.session_state.onboarding_step
+    with central_col:
+        st.markdown('<div class="glass-card">', unsafe_allow_html=True)
         
-        # Header Modulo
-        st.write(f"📂 **MODULO PROTOCOLLO_INIT: {step}/3**")
-        st.progress(step / 3)
+        stage = st.session_state.onboarding_stage
+        st.write(f"**PROTOCOLLO DI INIZIALIZZAZIONE // STAGE {stage}**")
+        st.progress(stage / 3)
         st.write("---")
 
-        if step == 1:
-            st.subheader("🧬 Modulo I: Identità Biometrica")
-            nome_c = st.text_input("Nome e Cognome", placeholder="Edoardo Miori")
-            nick = st.text_input("Nickname di Sistema", placeholder="Edo")
-            col1, col2 = st.columns(2)
-            dn = col1.date_input("Data di Nascita", value=datetime(2000, 1, 1))
-            genere = col2.selectbox("Identità", ["Maschile", "Femminile", "Non binario", "Non specificato"])
+        if stage == 1:
+            draw_section_title("Identità Biometrica", "Inserimento dati anagrafici primari")
             
-            if st.button("SALVA E PROSEGUI >>"):
-                if nome_c and nick:
-                    st.session_state.temp_reg_data.update({
-                        "nome": nome_c, "nick": nick, 
-                        "data_nascita": str(dn), "genere": genere
+            nome = st.text_input("NOME COMPLETO", placeholder="Edoardo Miori")
+            alias = st.text_input("ALIAS DI SISTEMA", placeholder="EDO_01")
+            
+            col_a, col_b = st.columns(2)
+            nascita = col_a.date_input("DATA DI NASCITA", value=datetime(2000, 1, 1))
+            settore = col_b.selectbox("SETTORE OPERATIVO", ["Engineering", "Finance", "Creative", "Health", "Student"])
+            
+            if st.button("SINCRONIZZA DATI >>"):
+                if nome and alias:
+                    st.session_state.draft_data.update({
+                        "name": nome, "nick": alias, "dob": str(nascita), "sector": settore
                     })
-                    st.session_state.onboarding_step = 2
+                    st.session_state.onboarding_stage = 2
                     st.rerun()
-                else: st.warning("Dati insufficienti per l'inizializzazione.")
+                else:
+                    st.error("ERRORE: Parametri identità incompleti.")
 
-        elif step == 2:
-            st.subheader("📡 Modulo II: Matrice Neurale")
-            st.write("Imposta i tuoi parametri pilota (1-10):")
-            col1, col2, col3 = st.columns(3)
-            s = col1.select_slider("Socialità", range(1, 11), 5)
-            e = col2.select_slider("Energia", range(1, 11), 5)
-            r = col3.select_slider("Rischio", range(1, 11), 5)
+        elif stage == 2:
+            draw_section_title("Matrice Neurale", "Calibrazione parametri della personalità")
+            
+            st.write("Definisci i livelli della tua matrice operativa (Scala 1-10):")
+            s_val = st.select_slider("SOCIALITÀ (Interazione esterna)", options=range(1, 11), value=5)
+            e_val = st.select_slider("ENERGIA (Output operativo)", options=range(1, 11), value=5)
+            r_val = st.select_slider("RISCHIO (Propensione al cambiamento)", options=range(1, 11), value=5)
             
             st.write("---")
-            vibe = st.radio("Stile di comunicazione AI desiderato:", 
-                           ["Diretto e Analitico", "Gentile e Motivatore", "Ironico e Scientifico"])
+            draw_section_title("Configurazione Estetica", "Selezione interfaccia cromatica")
+            selected_theme = st.selectbox(
+                "THEME_PACK", 
+                options=list(THEMES.keys()),
+                format_func=lambda x: THEMES[x]["name"]
+            )
             
-            if st.button("CONFIGURA ESTETICA >>"):
-                st.session_state.temp_reg_data.update({"social":s, "energia":e, "rischio":r, "vibe_ai":vibe})
-                st.session_state.onboarding_step = 3
+            # Cambia il tema in tempo reale per anteprima
+            if selected_theme != st.session_state.current_theme_id:
+                st.session_state.current_theme_id = selected_theme
                 st.rerun()
 
-        elif step == 3:
-            st.subheader("🎨 Modulo III: Personalizzazione OS")
-            st.write("Seleziona il tuo pacchetto colori d'interfaccia:")
-            tema_scelto = st.selectbox("Seleziona Tema", list(THEMES.keys()), index=0)
-            
-            # Anteprima istantanea del tema scelto
-            if tema_scelto != st.session_state.current_theme:
-                st.session_state.current_theme = tema_scelto
+            if st.button("VALIDA MATRICE >>"):
+                st.session_state.draft_data.update({
+                    "social": s_val, "energy": e_val, "risk": r_val
+                })
+                st.session_state.onboarding_stage = 3
                 st.rerun()
+
+        elif stage == 3:
+            draw_section_title("Obiettivi Strategici", "Definizione traguardi a breve e lungo termine")
+            
+            objectives = st.text_area(
+                "OBIETTIVO PRIMARIO", 
+                placeholder="Es: Ottimizzazione del workflow professionale e miglioramento della condizione atletica.",
+                height=150
+            )
             
             st.write("---")
-            goals = st.text_area("Cosa vuoi ottimizzare questo mese?", placeholder="Es: Produttività sul lavoro e sport.")
+            st.warning("Nota: Una volta avviato, il sistema richiederà un reboot completo per modificare questi parametri.")
             
-            if st.button("AVVIA PROTOCOLLO SYNAPSE"):
-                if goals:
-                    # Salvataggio definitivo del profilo
-                    st.session_state.temp_reg_data["goals"] = goals
-                    st.session_state.user_profile = st.session_state.temp_reg_data
-                    st.success("Analisi Neurale completata. Avvio Synapse OS.")
-                    st.balloons()
-                    time.sleep(1)
+            if st.button("AVVIA SYNAPSE_OS"):
+                if objectives:
+                    st.session_state.draft_data["objectives"] = objectives
+                    # Trasferimento dati definitivo
+                    st.session_state.user_profile = st.session_state.draft_data
+                    st.session_state.system_logs.append("User Profile Linked Successfully")
                     st.rerun()
-                else: st.warning("Definire almeno un obiettivo primario.")
-        
-        st.markdown('</div>', unsafe_allow_input=True)
+                else:
+                    st.error("ERRORE: Definire almeno un obiettivo strategico.")
+                    
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ==============================================================================
-# 4. UIMODULE: MAIN APPLICATION HUB
+# 4. INTERFACE MODULE: EXECUTIVE MAIN APP
 # ==============================================================================
-def render_main_app():
-    """L'app principale dopo il login (Executive Dashboard e Diario)."""
-    # Blindatura Cromatica Definitiva
-    apply_synapse_ui(st.session_state.current_theme)
-    t = THEMES[st.session_state.current_theme]
+
+def run_main_application():
+    """
+    L'interfaccia principale del sistema. 
+    Gestisce la Dashboard, il Diario Neurale e la gestione Sistema.
+    """
+    # Blindatura tema
+    apply_synapse_ui(st.session_state.current_theme_id)
+    theme = THEMES[st.session_state.current_theme_id]
+    profile = st.session_state.user_profile
     
-    # Navigation Bar (st.option_menu con stile fisso)
-    # Questa barra segue la navigazione e il menu blu si sposta
-    menu = option_menu(
-        None, ["Dashboard", "Diario Neurale", "Network", "Sistema"],
-        icons=["cpu-fill", "journal-text", "people-fill", "gear-fill"],
+    # Navigation Executive Bar
+    # Nota: Il menu blu seguirà ora correttamente la selezione
+    selected_menu = option_menu(
+        None, ["Dashboard", "Neural Log", "System Ops"],
+        icons=["grid-3x3-gap-fill", "terminal-fill", "toggles"],
         menu_icon="cast", default_index=0, orientation="horizontal",
         styles={
-            "container": {"background-color": t['card'], "padding": "0!important", "border": f"1px solid {t['main']}22"},
-            "nav-link": {"font-size": "14px", "text-align": "center", "margin":"0px", "color": t['txt']},
-            "nav-link-selected": {"background-color": t['main'], "color": t['bg'], "font-weight": "700"}
+            "container": {"background-color": "transparent", "padding": "0", "margin-bottom": "30px"},
+            "nav-link": {
+                "font-family": "JetBrains Mono", 
+                "color": "white", 
+                "font-size": "14px", 
+                "text-transform": "uppercase",
+                "border-radius": "10px",
+                "margin": "0 10px"
+            },
+            "nav-link-selected": {
+                "background-color": theme['main'], 
+                "color": theme['bg'],
+                "font-weight": "800"
+            }
         }
     )
 
-    # AREA CONTENUTO
-    if menu == "Dashboard":
-        st.markdown(f"### <span style='color:{t['main']}'>// DASHBOARD_GENERALE:</span> {st.session_state.user_profile['nick']}", unsafe_allow_input=True)
+    # --- SEZIONE A: DASHBOARD ---
+    if selected_menu == "Dashboard":
+        st.markdown(f'<p class="os-header">{profile["nick"]}_CORE</p>', unsafe_allow_html=True)
         
-        up = st.session_state.user_profile
-        col_chart, col_data = st.columns([1, 1])
+        col_main, col_side = st.columns([2, 1])
         
-        # Grafico Radar Personality (Executive Look)
-        with col_chart:
-            st.markdown('<div class="glass-card" style="padding:20px">', unsafe_allow_input=True)
-            categories = ['Socialità', 'Energia', 'Rischio']
-            values = [up['social'], up['energia'], up['rischio']]
+        with col_main:
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            draw_section_title("Analisi Parametrica Persona", "Radar chart dei tratti neurali")
+            
+            # Grafico Radar Professionale (Plotly)
+            categories = ['Socialità', 'Energia', 'Rischio', 'Focus', 'Analisi']
+            # I valori focus e analisi sono simulati basandosi sugli altri parametri
+            values = [
+                profile['social'], 
+                profile['energy'], 
+                profile['risk'], 
+                (profile['energy'] + profile['risk']) / 2,
+                (profile['social'] + profile['energy']) / 2
+            ]
             
             fig = go.Figure(data=go.Scatterpolar(
-                r=values, theta=categories, fill='toself', 
-                line_color=t['main'], fillcolor=f"{t['main']}33"
+                r=values, theta=categories, fill='toself',
+                line_color=theme['main'], fillcolor=f"{theme['main']}33"
             ))
+            
             fig.update_layout(
-                polar=dict(bgcolor="rgba(0,0,0,0)", radialaxis=dict(visible=True, range=[0, 10], color="#888")),
-                showlegend=False, paper_bgcolor="rgba(0,0,0,0)", font_color="white",
-                margin=dict(l=40, r=40, t=20, b=20)
+                polar=dict(
+                    bgcolor="rgba(0,0,0,0)",
+                    radialaxis=dict(visible=True, range=[0, 10], color="#555", gridcolor="#333"),
+                    angularaxis=dict(color="#888")
+                ),
+                showlegend=False,
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                margin=dict(l=80, r=80, t=40, b=40),
+                font=dict(family="JetBrains Mono", color="#FFF")
             )
             st.plotly_chart(fig, use_container_width=True)
-            st.markdown('</div>', unsafe_allow_input=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
-        with col_data:
-            st.markdown(f"Età: {up['data_nascita']} | Vibe AI: {up['vibe_ai']}")
-            st.write("**OBIETTIVI CORRENTI:**")
-            st.info(up['goals'])
-            st.metric("Messaggi Loggati", len(st.session_state.chat_log))
-
-    elif menu == "Diario Neurale":
-        st.subheader("🖋️ Registro di Comunicazione")
-        
-        # Area Storico Messaggi
-        chat_container = st.container(height=500)
-        with chat_container:
-            if not st.session_state.chat_log:
-                st.info("Nessun log trovato. Inizia la sincronizzazione scrivendo qui sotto.")
-            for m in st.session_state.chat_log:
-                div_class = "chat-user" if m["role"] == "user" else "chat-ai"
-                # Aggiungiamo un prefisso per professionalità
-                prefix = "UTENTE:" if m["role"] == "user" else "SYNAPSE:"
-                st.markdown(f'<div class="{div_class}"><strong>{prefix}</strong><br>{m["content"]}</div>', unsafe_allow_input=True)
-
-        # Input Messaggio (st.chat_input è in basso)
-        if prompt := st.chat_input("Digita un pensiero..."):
-            st.session_state.chat_log.append({"role": "user", "content": prompt})
+        with col_side:
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            draw_section_title("Dati Sessione", "Metriche operative real-time")
+            st.write(f"**Uptime:** {st.session_state.boot_timestamp}")
+            st.write(f"**Settore:** {profile['sector']}")
+            st.write(f"**Tema Attivo:** {theme['name']}")
+            st.write("---")
+            st.write("**Obiettivo Primario:**")
+            st.info(profile['objectives'])
+            st.markdown('</div>', unsafe_allow_html=True)
             
-            with st.spinner("Processing neurale..."):
-                response = get_ai_response(prompt)
-                st.session_state.chat_log.append({"role": "assistant", "content": response})
-            st.rerun() # Ricarica per mostrare subito la risposta
+            # Widget Log di Sistema
+            with st.expander("Visualizza Log di Sistema"):
+                for log in reversed(st.session_state.system_logs[-5:]):
+                    st.code(f"> {log}")
 
-    elif menu == "Network":
-        st.subheader("👥 Cerchio Sociale")
-        st.info("Funzionalità in fase di addestramento.")
-
-    elif menu == "Sistema":
-        st.subheader("⚙️ Configurazione")
-        st.markdown('<div class="glass-card">', unsafe_allow_input=True)
-        col1, col2 = st.columns(2)
+    # --- SEZIONE B: NEURAL LOG (CHATTING) ---
+    elif selected_menu == "Neural Log":
+        st.markdown(f'<p class="os-header">NEURAL_LOG</p>', unsafe_allow_html=True)
         
-        with col1:
-            st.write("**Estetica OS**")
-            n_t = st.selectbox("Cambia Tema", list(THEMES.keys()), index=list(THEMES.keys()).index(st.session_state.current_theme))
-            if st.button("APPLICA TEMA"):
-                st.session_state.current_theme = n_t
+        # Container per la chat con altezza fissa
+        chat_container = st.container(height=500)
+        
+        with chat_container:
+            if not st.session_state.chat_history:
+                st.write("Protocollo di comunicazione pronto. Inserire query per iniziare l'analisi.")
+            
+            for message in st.session_state.chat_history:
+                if message["role"] == "user":
+                    st.markdown(f'<div class="user-bubble"><strong>{profile["nick"].upper()}</strong><br>{message["content"]}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="ai-bubble"><strong>SYNAPSE_OS</strong><br>{message["content"]}</div>', unsafe_allow_html=True)
+        
+        # Area input in basso
+        if user_input := st.chat_input("Inserisci log neurale..."):
+            st.session_state.chat_history.append({"role": "user", "content": user_input})
+            
+            with st.spinner("Sincronizzazione neurale in corso..."):
+                ai_reply = call_neural_engine(user_input)
+                st.session_state.chat_history.append({"role": "assistant", "content": ai_reply})
+            
+            st.rerun()
+
+    # --- SEZIONE C: SYSTEM OPS ---
+    elif selected_menu == "System Ops":
+        st.markdown(f'<p class="os-header">SYSTEM_OPS</p>', unsafe_allow_html=True)
+        
+        col_left, col_right = st.columns(2)
+        
+        with col_left:
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            draw_section_title("Manutenzione Interfaccia", "Modifica parametri visivi")
+            new_theme = st.selectbox(
+                "CAMBIA TEMA OS", 
+                options=list(THEMES.keys()),
+                index=list(THEMES.keys()).index(st.session_state.current_theme_id),
+                format_func=lambda x: THEMES[x]["name"]
+            )
+            if st.button("AGGIORNA CORE VISIVO"):
+                st.session_state.current_theme_id = new_theme
                 st.rerun()
-                
-        with col2:
-            st.write("**Manutenzione Dati**")
-            if st.button("WIPE_SYSTEM (Reset Totale)"):
-                st.session_state.update({'user_profile': None, 'onboarding_step': 1, 'chat_log': []})
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+        with col_right:
+            st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+            draw_section_title("Protocollo Reset", "Cancellazione totale dati sessione")
+            st.error("ATTENZIONE: Questa azione è irreversibile.")
+            if st.button("WIPE_ALL_DATA"):
+                # Reset totale dello stato
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
                 st.rerun()
-        st.markdown('</div>', unsafe_allow_input=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
 # ==============================================================================
-# 5. EXECUTION ENGINE
+# 5. EXECUTION BOOTLOADER
 # ==============================================================================
-# Se il profilo non esiste, avvia onboarding, altrimenti l'app principale
-if st.session_state.user_profile is None:
-    render_onboarding()
-else:
-    render_main_app()
 
-# ==============================================================================
-# FINE CODICE SYNAPSE OS v2.0
-# ==============================================================================
+if __name__ == "__main__":
+    initialize_neural_state()
+    
+    # Routing principale: Onboarding o App?
+    if st.session_state.user_profile is None:
+        run_onboarding_protocol()
+    else:
+        run_main_application()
+
+# FINE CODICE app.py
