@@ -8,54 +8,40 @@ THEMES = {
 }
 
 def apply_synapse_ui(theme_name):
-    t = THEMES.get(theme_name, THEMES["Cyber Matrix"])
+    # Se il tema non esiste più o è corrotto, usa Cyber Matrix
+    if theme_name not in THEMES:
+        theme_name = "Cyber Matrix"
     
-    # Usiamo ID univoci per il CSS per evitare sovrapposizioni al click
+    t = THEMES[theme_name]
+    
     style = f"""
     <style>
-    :root {{
-        --main: {t['main']};
-        --sec: {t['sec']};
-        --bg: {t['bg']};
-        --card: {t['card']};
-        --txt: {t['txt']};
-    }}
+    .stApp {{ background-color: {t['bg']}; color: {t['txt']}; }}
     
-    .stApp {{ background-color: var(--bg); color: var(--txt); }}
-    
-    /* Titolo Premium */
     .os-title {{
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 3.2rem; font-weight: 800; text-align: center;
-        background: linear-gradient(135deg, var(--main), var(--sec));
+        font-family: 'Courier New', monospace;
+        font-size: 3rem; font-weight: bold; text-align: center;
+        background: linear-gradient(to right, {t['main']}, {t['sec']});
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        filter: drop-shadow(0 0 8px rgba(0,255,170,0.3));
-        margin-bottom: 30px;
+        margin-bottom: 20px;
     }}
 
     .glass-card {{
-        background: var(--card);
-        border: 1px solid var(--main);
-        border-radius: 20px; padding: 35px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        background: {t['card']};
+        border: 1px solid {t['main']};
+        border-radius: 15px; padding: 25px;
+        margin-bottom: 20px;
     }}
 
-    /* Bottoni e Input Fixed */
     .stButton>button {{
-        background: linear-gradient(135deg, var(--main), var(--sec)) !important;
-        color: var(--bg) !important; border: none !important;
-        font-weight: bold !important; border-radius: 12px !important;
-        height: 55px; width: 100% !important; transition: 0.3s;
-    }}
-    
-    .stTextInput>div>div>input {{
-        background-color: #000 !important; border: 1px solid #333 !important;
-        color: white !important; border-radius: 10px !important;
+        background: linear-gradient(to right, {t['main']}, {t['sec']}) !important;
+        color: {t['bg']} !important; font-weight: bold !important;
+        border-radius: 10px !important; border: none !important;
+        height: 50px; width: 100%;
     }}
 
-    /* Messaggi Diario */
-    .user-msg {{ border-right: 4px solid var(--main); padding: 15px; margin: 10px 0 10px 50px; background: var(--card); border-radius: 10px 0 0 10px; }}
-    .ai-msg {{ border-left: 4px solid var(--sec); padding: 15px; margin: 10px 50px 10px 0; background: var(--card); border-radius: 0 10px 10px 0; }}
+    .user-msg {{ border-right: 4px solid {t['main']}; padding: 15px; margin: 10px 0 10px 40px; background: {t['card']}; text-align: right; }}
+    .ai-msg {{ border-left: 4px solid {t['sec']}; padding: 15px; margin: 10px 40px 10px 0; background: {t['card']}; }}
     </style>
     """
     st.markdown(style, unsafe_allow_html=True)
