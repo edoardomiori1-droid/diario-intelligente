@@ -1,147 +1,258 @@
+"""
+SYNAPSE NEURAL OS - CORE INTERFACE ENGINE v3.5
+File: ui_styles.py
+Status: EXECUTIVE / STABLE
+Description: Gestione avanzata del design system e dell'iniezione CSS.
+"""
+
 import streamlit as st
 
 # ==============================================================================
-# 1. DESIGN SYSTEM - DEFINIZIONE TEMI PROFESSIONALI (Enterprise Level)
+# 1. ARCHITETTURA TEMI (ENTERPRISE GRADE)
 # ==============================================================================
-# Ogni tema definisce l'intera palette cromatica.
-# Usiamo nomi professionali e colori ad alto contrasto per un'esperienza executive.
+# Ogni tema è un'istanza cromatica isolata per evitare il "color-bleeding" tra pagine.
+# Ho rimosso ogni elemento infantile per un look da ufficio di intelligence.
+
 THEMES = {
-    "Synapse Prime (Matrix)": {
-        "main": "#00FF41", "sec": "#008F11", "bg": "#0D0D0D", 
-        "card": "#1A1A1A", "txt": "#E0E0E0", "sidebar": "#000000"
+    "SYNAPSE_PRIME": {
+        "id": "PRIME",
+        "name": "Synapse Prime (Matrix)",
+        "main": "#00FF41",  # Neon Green
+        "sec": "#008F11",   # Dark Green
+        "bg": "#0A0A0A",    # Pure Black
+        "card": "#121212",  # Jet Black
+        "txt": "#E0E0E0",   # Platinum
+        "border": "#00FF4133",
+        "gradient": "linear-gradient(135deg, #00FF41 0%, #008F11 100%)"
     },
-    "Synthetic Sunset": {
-        "main": "#FF8C00", "sec": "#FF0080", "bg": "#120D16", 
-        "card": "#1D1625", "txt": "#F5F5F5", "sidebar": "#120D16"
+    "DEEP_SPACE": {
+        "id": "SPACE",
+        "name": "Deep Space (Tactical)",
+        "main": "#00FFFF",  # Cyan
+        "sec": "#0044FF",   # Electric Blue
+        "bg": "#05080A",    # Space Black
+        "card": "#0D1117",  # Navy Grey
+        "txt": "#F0F8FF",   # Alice Blue
+        "border": "#00FFFF33",
+        "gradient": "linear-gradient(135deg, #00FFFF 0%, #0044FF 100%)"
     },
-    "Deep Space (Ocean)": {
-        "main": "#00FFFF", "sec": "#007FFF", "bg": "#050A10", 
-        "card": "#0F1720", "txt": "#E0F7FA", "sidebar": "#050A10"
+    "CRIMSON_PROTOCOL": {
+        "id": "CRIMSON",
+        "name": "Crimson Protocol",
+        "main": "#FF0000",  # Pure Red
+        "sec": "#800000",   # Maroon
+        "bg": "#080808",    # Dark
+        "card": "#181818",  # Carbon
+        "txt": "#FFFFFF",   # White
+        "border": "#FF000033",
+        "gradient": "linear-gradient(135deg, #FF0000 0%, #800000 100%)"
     },
-    "Crimson fury": {
-        "main": "#FF0000", "sec": "#8B0000", "bg": "#0F0F0F", 
-        "card": "#1C1C1C", "txt": "#FFFFFF", "sidebar": "#000000"
+    "OBSIDIAN_GOLD": {
+        "id": "GOLD",
+        "name": "Obsidian Gold (Elite)",
+        "main": "#D4AF37",  # Gold
+        "sec": "#996515",   # Golden Brown
+        "bg": "#050505",    # Rich Black
+        "card": "#111111",  # Dark Obsidian
+        "txt": "#FFFAF0",   # Ivory
+        "border": "#D4AF3733",
+        "gradient": "linear-gradient(135deg, #D4AF37 0%, #996515 100%)"
     }
 }
 
 # ==============================================================================
-# 2. CORE INJECTION - FUNZIONE DI APPLICAZIONE STILE (v3.0)
+# 2. ENGINE DI INIEZIONE CSS (ANTI-Sfarfallio)
 # ==============================================================================
+
 def apply_synapse_ui(theme_name):
     """
-    Inietta il design system nell'applicazione Streamlit.
-    Usa variabili CSS (:root) per blindare i colori e prevenire sfarfallii.
-    Inietta animazioni globali e transizioni executive.
+    Iniezione CSS potenziata. 
+    Risolve il bug 'unsafe_allow_input' e blocca i colori tramite variabili root.
     """
-    # Fallback di sicurezza: se il tema non esiste, usa il principale
-    if theme_name not in THEMES:
-        theme_name = "Synapse Prime (Matrix)"
     
-    t = THEMES[theme_name]
+    # Selezione del tema con fallback di sicurezza
+    t = THEMES.get(theme_name, THEMES["SYNAPSE_PRIME"])
     
-    # Costruiamo il CSS in modo modulare senza f-strings complesse 
-    # per evitare TypeError su Python 3.14
-    css_template = """
+    # Costruzione del CSS Modulare
+    # Nota: Usiamo .replace per iniettare i valori ed evitare bug di formatting {}
+    css_content = """
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
-    
-    /* DEFINIZIONE VARIABILI CSS (:root) - Blocca i colori preventivamente */
+    /* ------------------------------------------------------------------
+       RESET & CORE VARIABLES
+    ------------------------------------------------------------------ */
     :root {
-        --bg-color: [BG];
-        --txt-color: [TXT];
-        --main-color: [MAIN];
-        --sec-color: [SEC];
-        --card-color: [CARD];
-        --sidebar-color: [SIDEBAR];
+        --syn-main: [MAIN];
+        --syn-sec: [SEC];
+        --syn-bg: [BG];
+        --syn-card: [CARD];
+        --syn-txt: [TXT];
+        --syn-border: [BORDER];
+        --syn-grad: [GRAD];
     }
-    
-    /* RESET E FONT GLOBALI */
-    html, body, [class*="css"] {
-        background-color: var(--bg-color);
-        color: var(--txt-color);
-        font-family: 'Inter', sans-serif;
-    }
-    
-    .stApp { background: var(--bg-color); }
 
-    /* TITOLO EXECUTIVE NEON */
+    /* ------------------------------------------------------------------
+       GLOBAL STYLES
+    ------------------------------------------------------------------ */
+    .stApp {
+        background-color: var(--syn-bg);
+        color: var(--syn-txt);
+        font-family: 'Inter', -apple-system, sans-serif;
+    }
+
+    /* Nascondi header Streamlit per un look OS nativo */
+    header, footer, #MainMenu {visibility: hidden;}
+
+    /* ------------------------------------------------------------------
+       EXECUTIVE HEADER
+    ------------------------------------------------------------------ */
     .os-header {
         font-family: 'JetBrains Mono', monospace;
-        font-size: 3.5rem;
-        font-weight: 800;
-        background: linear-gradient(90deg, var(--main-color), var(--sec-color));
+        font-size: 4rem;
+        font-weight: 900;
+        text-align: center;
+        background: var(--syn-grad);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        text-align: center;
-        letter-spacing: -3px;
-        margin-top: -50px;
-        filter: drop-shadow(0 0 10px rgba(0, 255, 170, 0.4));
+        letter-spacing: -5px;
+        margin-top: -60px;
+        margin-bottom: 20px;
+        filter: drop-shadow(0 0 15px [MAIN]33);
+        animation: pulse 4s infinite ease-in-out;
     }
 
-    /* CARD DI CONTENUTO PREMIUM */
+    @keyframes pulse {
+        0% { opacity: 0.9; transform: scale(0.99); }
+        50% { opacity: 1; transform: scale(1); }
+        100% { opacity: 0.9; transform: scale(0.99); }
+    }
+
+    /* ------------------------------------------------------------------
+       GLASS CARDS & CONTAINERS
+    ------------------------------------------------------------------ */
     .glass-card {
-        background: var(--card-color);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 20px;
-        padding: 40px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        background: var(--syn-card);
+        border: 1px solid var(--syn-border);
+        border-radius: 24px;
+        padding: 45px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 25px;
+    }
+    
+    .glass-card:hover {
+        border: 1px solid var(--syn-main);
+        box-shadow: 0 0 30px [MAIN]11;
     }
 
-    /* MODIFICA INPUT E TEXTAREA */
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
-        background-color: rgba(255, 255, 255, 0.03) !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        color: var(--txt-color) !important;
+    /* ------------------------------------------------------------------
+       EXECUTIVE INPUTS (Text, TextArea, Select)
+    ------------------------------------------------------------------ */
+    div[data-baseweb="input"], div[data-baseweb="textarea"], div[data-baseweb="select"] {
+        background-color: #00000033 !important;
         border-radius: 12px !important;
-        padding: 12px !important;
+        border: 1px solid var(--syn-border) !important;
+        transition: 0.3s;
+    }
+    
+    div[data-baseweb="input"]:focus-within {
+        border-color: var(--syn-main) !important;
+        box-shadow: 0 0 10px [MAIN]22 !important;
     }
 
-    /* BOTTONI PREMIUM CON TRANSIZIONE */
+    input, textarea {
+        color: var(--syn-txt) !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    /* ------------------------------------------------------------------
+       PREMIUM BUTTONS
+    ------------------------------------------------------------------ */
     .stButton>button {
-        background: linear-gradient(135deg, var(--main-color) 0%, var(--sec-color) 100%) !important;
-        color: var(--bg-color) !important;
-        font-weight: 700 !important;
+        background: var(--syn-grad) !important;
+        color: #000 !important;
+        font-weight: 800 !important;
+        font-size: 1.1rem !important;
         border: none !important;
-        border-radius: 14px !important;
-        height: 3.5rem !important;
+        border-radius: 16px !important;
+        height: 65px !important;
         width: 100% !important;
-        transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 2px;
+        transition: 0.4s all ease !important;
+        box-shadow: 0 4px 15px [MAIN]33 !important;
     }
+
     .stButton>button:hover {
-        transform: translateY(-3px) !important;
-        box-shadow: 0 10px 20px rgba(0, 255, 170, 0.4) !important;
+        transform: translateY(-4px) scale(1.02) !important;
+        box-shadow: 0 12px 25px [MAIN]55 !important;
+        filter: brightness(1.1);
+    }
+    
+    .stButton>button:active {
+        transform: scale(0.98) !important;
     }
 
-    /* CHAT E REGISTRO NEURALE */
-    .chat-user {
-        border-right: 4px solid var(--main-color);
-        padding: 15px; margin: 10px 0 10px 100px;
-        background: var(--card-color); border-radius: 12px 0 12px 12px;
-    }
-    .chat-ai {
-        border-left: 4px solid var(--sec-color);
-        padding: 15px; margin: 10px 100px 10px 0;
-        background: var(--card-color); border-radius: 0 12px 12px 12px;
-        color: var(--txt-color);
-    }
-
-    /* ANIMAZIONE TRANSIZIONE GLOBALE */
-    #root, .stApp {
-        transition: opacity 0.5s ease;
+    /* ------------------------------------------------------------------
+       NEURAL CHAT BUBBLES
+    ------------------------------------------------------------------ */
+    .user-bubble {
+        background: var(--syn-card);
+        border-right: 6px solid var(--syn-main);
+        padding: 25px;
+        margin: 15px 0 15px 80px;
+        border-radius: 20px 0 20px 20px;
+        box-shadow: -10px 10px 25px rgba(0,0,0,0.3);
+        font-size: 1.05rem;
+        line-height: 1.6;
     }
 
-    /* Nascondi elementi Streamlit standard */
-    #MainMenu, footer, header {visibility: hidden;}
+    .ai-bubble {
+        background: var(--syn-card);
+        border-left: 6px solid var(--syn-sec);
+        padding: 25px;
+        margin: 15px 80px 15px 0;
+        border-radius: 0 20px 20px 20px;
+        box-shadow: 10px 10px 25px rgba(0,0,0,0.3);
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: #f1f1f1;
+    }
+
+    /* ------------------------------------------------------------------
+       CUSTOM SCROLLBAR
+    ------------------------------------------------------------------ */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--syn-bg); }
+    ::-webkit-scrollbar-thumb { 
+        background: var(--syn-border); 
+        border-radius: 10px; 
+    }
+    ::-webkit-scrollbar-thumb:hover { background: var(--syn-main); }
+    
     </style>
     """
     
-    # Sostituzione manuale per evitare errori di formato
-    style = css_template.replace("[MAIN]", t['main']) \
-                        .replace("[SEC]", t['sec']) \
-                        .replace("[BG]", t['bg']) \
-                        .replace("[CARD]", t['card']) \
-                        .replace("[TXT]", t['txt'])
-                        
-    st.markdown(style, unsafe_allow_input=True)
+    # Esecuzione rimpiazzi (FIX per stabilità Python 3.14)
+    final_css = css_content.replace("[MAIN]", t['main']) \
+                           .replace("[SEC]", t['sec']) \
+                           .replace("[BG]", t['bg']) \
+                           .replace("[CARD]", t['card']) \
+                           .replace("[TXT]", t['txt']) \
+                           .replace("[BORDER]", t['border']) \
+                           .replace("[GRAD]", t['gradient'])
+    
+    # FIX ERRORE: Cambio unsafe_allow_input in unsafe_allow_html
+    st.markdown(final_css, unsafe_allow_html=True)
+
+# ==============================================================================
+# 3. EXTRA UTILS: DASHBOARD WIDGETS
+# ==============================================================================
+
+def draw_section_title(title, subtitle=""):
+    """Disegna un titolo di sezione in stile OS."""
+    st.markdown(f"""
+        <div style="margin-bottom: 30px; border-left: 4px solid var(--syn-main); padding-left: 20px;">
+            <h2 style="margin:0; color:var(--syn-main); text-transform:uppercase; letter-spacing:2px; font-size:1.5rem;">{title}</h2>
+            <p style="margin:0; opacity:0.6; font-size:0.9rem;">{subtitle}</p>
+        </div>
+    """, unsafe_allow_html=True)
