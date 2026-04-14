@@ -1,112 +1,135 @@
 import streamlit as st
 
-# Dizionario dei Temi: Qui puoi aggiungere infiniti stili
+# ==============================================================================
+# 1. DESIGN SYSTEM - DEFINIZIONE TEMI PROFESSIONALI (Enterprise Level)
+# ==============================================================================
+# Ogni tema definisce l'intera palette cromatica.
+# Usiamo nomi professionali e colori ad alto contrasto per un'esperienza executive.
 THEMES = {
-    "Cyber Matrix": {
+    "Synapse Prime (Matrix)": {
         "main": "#00FF41", "sec": "#008F11", "bg": "#0D0D0D", 
-        "card": "#161616", "txt": "#E0E0E0", "accent": "#00FF41"
+        "card": "#1A1A1A", "txt": "#E0E0E0", "sidebar": "#000000"
     },
     "Synthetic Sunset": {
-        "main": "#FF8C00", "sec": "#FF0080", "bg": "#0D0B10", 
-        "card": "#1A1621", "txt": "#F5F5F5", "accent": "#FF8C00"
+        "main": "#FF8C00", "sec": "#FF0080", "bg": "#120D16", 
+        "card": "#1D1625", "txt": "#F5F5F5", "sidebar": "#120D16"
     },
-    "Deep Space": {
+    "Deep Space (Ocean)": {
         "main": "#00FFFF", "sec": "#007FFF", "bg": "#050A10", 
-        "card": "#0F1720", "txt": "#E0F7FA", "accent": "#00FFFF"
+        "card": "#0F1720", "txt": "#E0F7FA", "sidebar": "#050A10"
     },
-    "Crimson Fury": {
+    "Crimson fury": {
         "main": "#FF0000", "sec": "#8B0000", "bg": "#0F0F0F", 
-        "card": "#1C1C1C", "txt": "#FFFFFF", "accent": "#FF0000"
+        "card": "#1C1C1C", "txt": "#FFFFFF", "sidebar": "#000000"
     }
 }
 
+# ==============================================================================
+# 2. CORE INJECTION - FUNZIONE DI APPLICAZIONE STILE (v3.0)
+# ==============================================================================
 def apply_synapse_ui(theme_name):
     """
-    Inietta il CSS nell'applicazione in modo sicuro.
-    Usa il metodo .replace() per evitare bug di Python 3.14 con le parentesi graffe.
+    Inietta il design system nell'applicazione Streamlit.
+    Usa variabili CSS (:root) per blindare i colori e prevenire sfarfallii.
+    Inietta animazioni globali e transizioni executive.
     """
-    t = THEMES.get(theme_name, THEMES["Cyber Matrix"])
+    # Fallback di sicurezza: se il tema non esiste, usa il principale
+    if theme_name not in THEMES:
+        theme_name = "Synapse Prime (Matrix)"
     
-    style_template = """
+    t = THEMES[theme_name]
+    
+    # Costruiamo il CSS in modo modulare senza f-strings complesse 
+    # per evitare TypeError su Python 3.14
+    css_template = """
     <style>
-    /* 1. RESET E FONT */
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
     
-    .stApp {
-        background-color: [BG];
-        color: [TXT];
-        font-family: 'JetBrains Mono', monospace;
+    /* DEFINIZIONE VARIABILI CSS (:root) - Blocca i colori preventivamente */
+    :root {
+        --bg-color: [BG];
+        --txt-color: [TXT];
+        --main-color: [MAIN];
+        --sec-color: [SEC];
+        --card-color: [CARD];
+        --sidebar-color: [SIDEBAR];
     }
+    
+    /* RESET E FONT GLOBALI */
+    html, body, [class*="css"] {
+        background-color: var(--bg-color);
+        color: var(--txt-color);
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .stApp { background: var(--bg-color); }
 
-    /* 2. TITOLO NEON ANIMATO */
-    .os-title {
+    /* TITOLO EXECUTIVE NEON */
+    .os-header {
+        font-family: 'JetBrains Mono', monospace;
         font-size: 3.5rem;
         font-weight: 800;
-        text-align: center;
-        background: linear-gradient(90deg, [MAIN], [SEC]);
+        background: linear-gradient(90deg, var(--main-color), var(--sec-color));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        margin-top: 20px;
-        margin-bottom: 10px;
-        filter: drop-shadow(0 0 10px [MAIN]44);
+        text-align: center;
+        letter-spacing: -3px;
+        margin-top: -50px;
+        filter: drop-shadow(0 0 10px rgba(0, 255, 170, 0.4));
     }
 
-    /* 3. CONTENITORI (GLASS CARDS) */
+    /* CARD DI CONTENUTO PREMIUM */
     .glass-card {
-        background: [CARD];
-        border: 1px solid [MAIN]66;
+        background: var(--card-color);
+        border: 1px solid rgba(255, 255, 255, 0.05);
         border-radius: 20px;
         padding: 40px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.7);
-        margin-bottom: 25px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.5);
     }
 
-    /* 4. BOTTONI PREMIUM */
-    .stButton>button {
-        background: linear-gradient(135deg, [MAIN] 0%, [SEC] 100%) !important;
-        color: [BG] !important;
-        border: none !important;
-        font-weight: bold !important;
-        font-size: 1rem !important;
+    /* MODIFICA INPUT E TEXTAREA */
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea {
+        background-color: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        color: var(--txt-color) !important;
         border-radius: 12px !important;
-        padding: 15px 25px !important;
-        width: 100% !important;
-        height: 60px !important;
-        transition: all 0.3s ease !important;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-    }
-    .stButton>button:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 10px 20px [MAIN]44 !important;
-        filter: brightness(1.1);
-    }
-
-    /* 5. INPUT E CHAT */
-    .stTextInput>div>div>input {
-        background-color: #000 !important;
-        color: white !important;
-        border: 1px solid [MAIN]44 !important;
-        border-radius: 10px !important;
         padding: 12px !important;
     }
-    
-    .user-msg {
-        background: [CARD];
-        border-right: 5px solid [MAIN];
-        padding: 20px;
-        margin: 10px 0 10px 60px;
-        border-radius: 15px 0 0 15px;
-        box-shadow: -5px 5px 15px rgba(0,0,0,0.3);
+
+    /* BOTTONI PREMIUM CON TRANSIZIONE */
+    .stButton>button {
+        background: linear-gradient(135deg, var(--main-color) 0%, var(--sec-color) 100%) !important;
+        color: var(--bg-color) !important;
+        font-weight: 700 !important;
+        border: none !important;
+        border-radius: 14px !important;
+        height: 3.5rem !important;
+        width: 100% !important;
+        transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
-    
-    .ai-msg {
-        background: [CARD];
-        border-left: 5px solid [SEC];
-        padding: 20px;
-        margin: 10px 60px 10px 0;
-        border-radius: 0 15px 15px 0;
-        box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+    .stButton>button:hover {
+        transform: translateY(-3px) !important;
+        box-shadow: 0 10px 20px rgba(0, 255, 170, 0.4) !important;
+    }
+
+    /* CHAT E REGISTRO NEURALE */
+    .chat-user {
+        border-right: 4px solid var(--main-color);
+        padding: 15px; margin: 10px 0 10px 100px;
+        background: var(--card-color); border-radius: 12px 0 12px 12px;
+    }
+    .chat-ai {
+        border-left: 4px solid var(--sec-color);
+        padding: 15px; margin: 10px 100px 10px 0;
+        background: var(--card-color); border-radius: 0 12px 12px 12px;
+        color: var(--txt-color);
+    }
+
+    /* ANIMAZIONE TRANSIZIONE GLOBALE */
+    #root, .stApp {
+        transition: opacity 0.5s ease;
     }
 
     /* Nascondi elementi Streamlit standard */
@@ -114,11 +137,11 @@ def apply_synapse_ui(theme_name):
     </style>
     """
     
-    # Sostituzione manuale per evitare errori di string-formatting
-    style = style_template.replace("[MAIN]", t['main']) \
-                          .replace("[SEC]", t['sec']) \
-                          .replace("[BG]", t['bg']) \
-                          .replace("[CARD]", t['card']) \
-                          .replace("[TXT]", t['txt'])
-                          
-    st.markdown(style, unsafe_allow_html=True)
+    # Sostituzione manuale per evitare errori di formato
+    style = css_template.replace("[MAIN]", t['main']) \
+                        .replace("[SEC]", t['sec']) \
+                        .replace("[BG]", t['bg']) \
+                        .replace("[CARD]", t['card']) \
+                        .replace("[TXT]", t['txt'])
+                        
+    st.markdown(style, unsafe_allow_input=True)
