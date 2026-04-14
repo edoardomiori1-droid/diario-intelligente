@@ -1,2 +1,2 @@
-# diario-intelligente
+# Nexus
 A Daily diary for my life 
